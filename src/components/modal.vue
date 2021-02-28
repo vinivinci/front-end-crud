@@ -28,8 +28,6 @@
                     label="Your phone"
                     icon="phone"
                     type="number"
-                    :min="11"
-                    :max="11"
            />
            <select v-model="permission" class="browser-default custom-select custom-select-lg mb-3">
                 <option value="admin">ADMIN</option>
@@ -38,7 +36,17 @@
       </mdb-modal-body>
       <mdb-modal-footer>
         <mdb-btn color="blue-grey" @click.native="onClose">Cancel</mdb-btn>
-        <mdb-btn color="success" @click.native="onSubmit">Save changes</mdb-btn>
+        <mdb-btn
+          color="success"
+          :class="{ disabled:
+            email == '' ||
+            password == '' ||
+            phone == '' ||
+            name == ''}"
+          @click.native="onSubmit"
+        >
+          Save changes
+        </mdb-btn>
       </mdb-modal-footer>
     </mdb-modal>
   </div>
@@ -81,7 +89,7 @@ export default {
     return {
       modal: this.openModal,
       name: this.user.name,
-      password: this.user.name ? '*********' : this.user.name,
+      password: this.user.name ? '*********' : '',
       email: this.user.email,
       phone: this.user.phone,
       permission: this.user.permission,
@@ -100,7 +108,12 @@ export default {
         phone: this.phone,
         permission: this.permission,
       };
-      this.$emit('create', userInfo);
+      if (this.titleMenu === 'Create User') {
+        this.$emit('create', userInfo);
+      } else {
+        userInfo.password = userInfo.password === '*********' ? undefined : userInfo.password;
+        this.$emit('edit', userInfo);
+      }
     },
   },
 };

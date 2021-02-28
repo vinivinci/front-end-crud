@@ -1,11 +1,29 @@
 <template>
     <div>
         <modal
-          v-on:close="openModal=false"
-          v-on:create="create"
-          v-if="openModal" :openModal="openModal"
-          :user = currentUser
+            v-on:close="closeModal"
+            v-on:create="create"
+            v-on:edit="update"
+            v-if="openModal"
+            :openModal="openModal"
+            :user="currentUser"
+            :title="titleModal"
         />
+        <mdb-modal :show="openModalDelete" @close="openModalDelete = false">
+            <mdb-modal-header>
+                <mdb-modal-title>Confirm Deletion</mdb-modal-title>
+            </mdb-modal-header>
+            <mdb-modal-footer>
+                <mdb-btn
+                    color="blue-grey"
+                    @click.native="openModalDelete = false"
+                    >Cancel</mdb-btn
+                >
+                <mdb-btn @click.native="deleteUserApi" color="danger"
+                    >Confirm</mdb-btn
+                >
+            </mdb-modal-footer>
+        </mdb-modal>
         <top-bar />
         <mdb-row style="width:100%">
             <mdb-col
@@ -30,14 +48,18 @@
             </mdb-col>
             <mdb-col style="padding:0px;display:flex;justify-content:flex-end">
                 <mdb-btn
-                @click.native="openModal = true"
-                 color="primary"
+                    v-if="user.permission === 'admin'"
+                    @click.native="beforeCreateUser"
+                    color="primary"
                 >
-                  <mdb-icon icon="plus" />
-                  NEW USER
+                    <mdb-icon icon="plus" />
+                    NEW USER
                 </mdb-btn>
             </mdb-col>
         </mdb-row>
+        <mdb-alert style="text-transform:uppercase" v-show="alertFlag" color="danger">
+          it is not possible to exclude yourself
+        </mdb-alert>
         <mdb-tbl btn responsive striped>
             <mdb-tbl-head>
                 <tr>
@@ -45,22 +67,25 @@
                     <th>Email</th>
                     <th>Permission</th>
                     <th>Phone</th>
-                    <th>Actions</th>
+                    <th v-if="user.permission === 'admin'">Actions</th>
                 </tr>
             </mdb-tbl-head>
 
-            <mdb-tbl-body v-for="user in data" :key="user.id">
+            <mdb-tbl-body v-for="userIterator in data" :key="userIterator.id">
                 <tr>
-                    <td>{{ user.name }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.permission }}</td>
-                    <td>{{ user.phone }}</td>
-                    <td>
-                        <mdb-icon style="cursor:pointer"
-                        @click.native="setUser(user)"
-                        icon="edit" />
+                    <td>{{ userIterator.name }}</td>
+                    <td>{{ userIterator.email }}</td>
+                    <td>{{ userIterator.permission }}</td>
+                    <td>{{ userIterator.phone }}</td>
+                    <td v-if="user.permission === 'admin'">
                         <mdb-icon
                             style="cursor:pointer"
+                            @click.native="setUser(userIterator)"
+                            icon="edit"
+                        />
+                        <mdb-icon
+                            style="color:red;cursor:pointer"
+                            @click.native="deleteUser(userIterator)"
                             class="ml-2"
                             icon="trash-alt"
                         />
@@ -79,6 +104,11 @@ import {
   mdbRow,
   mdbCol,
   mdbBtn,
+  mdbModal,
+  mdbModalHeader,
+  mdbModalTitle,
+  mdbModalFooter,
+  mdbAlert,
 } from 'mdbvue';
 import axios from 'axios';
 import TopBar from '../components/topBar.vue';
@@ -91,22 +121,31 @@ export default {
     mdbIcon,
     mdbTbl,
     mdbTblHead,
+    mdbModal,
     mdbTblBody,
     mdbRow,
     mdbCol,
     mdbBtn,
     Modal,
+    mdbModalHeader,
+    mdbModalTitle,
+    mdbModalFooter,
+    mdbAlert,
   },
   data() {
     return {
       data: {},
       nameSearched: '',
       openModal: false,
+      openModalDelete: false,
+      user: {},
+      alertFlag: false,
       currentUser: {
         name: '',
         email: '',
         phone: '',
-        permission: '',
+        permission: 'standard',
+        titleModal: '',
       },
     };
   },
@@ -114,30 +153,105 @@ export default {
     const token = sessionStorage.getItem('token') != null
       ? sessionStorage.getItem('token')
       : localStorage.getItem('token');
+    this.user = sessionStorage.getItem('user') != null
+      ? JSON.parse(sessionStorage.getItem('user'))
+      : JSON.parse(localStorage.getItem('user'));
     axios.defaults.headers.common.Authorization = `Bearer ${token}`;
     this.getUsers();
   },
   methods: {
+    showAlert() {
+      this.alertFlag = true;
+      setTimeout(() => {
+        this.alertFlag = false;
+      }, 5000);
+    },
+    deleteUser(user) {
+      this.openModalDelete = true;
+      this.currentUser = user;
+    },
     setUser(user) {
+      this.titleModal = 'Edit User';
       this.currentUser = user;
       this.openModal = true;
     },
+    beforeCreateUser() {
+      this.titleModal = 'Create User';
+      this.openModal = true;
+    },
+    closeModal() {
+      this.currentUser = {
+        name: '',
+        email: '',
+        phone: '',
+        permission: 'standard',
+      };
+      this.openModal = false;
+    },
+    deleteUserApi() {
+      const id = this.currentUser._id;
+      if (id === this.user._id) {
+        this.showAlert();
+        this.openModalDelete = false;
+      } else {
+        axios
+          .delete(`http://localhost:8080/app/delete/${id}`)
+          .then((response) => {
+            if (response) {
+              this.openModalDelete = false;
+              this.currentUser = {
+                name: '',
+                email: '',
+                phone: '',
+                permission: 'standard',
+                titleModal: '',
+              };
+              this.getUsers();
+            }
+          })
+          .catch((err) => {
+            alert(err);
+          });
+      }
+    },
     create(e) {
-      console.log(e);
-      axios.post('http://localhost:8080/app/register', {
-        name: e.name,
-        email: e.email,
-        password: e.password,
-        phone: e.phone,
-        permission: e.permission,
-      }).then((response) => {
-        if (response) {
-          this.openModal = false;
-          this.getUsers();
-        }
-      }).catch((err) => {
-        alert(err);
-      });
+      axios
+        .post('http://localhost:8080/app/register', {
+          name: e.name,
+          email: e.email,
+          password: e.password,
+          phone: e.phone,
+          permission: e.permission,
+        })
+        .then((response) => {
+          if (response) {
+            this.openModal = false;
+            this.getUsers();
+          }
+        })
+        .catch((err) => {
+          alert(err);
+        });
+    },
+    update(e) {
+      const id = this.currentUser._id;
+      axios
+        .put(`http://localhost:8080/app/update/${id}`, {
+          name: e.name,
+          email: e.email,
+          password: e.password,
+          phone: e.phone,
+          permission: e.permission,
+        })
+        .then((response) => {
+          if (response) {
+            this.openModal = false;
+            this.getUsers();
+          }
+        })
+        .catch((err) => {
+          alert(err);
+        });
     },
     getUsers() {
       axios

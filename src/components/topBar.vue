@@ -10,10 +10,10 @@
               color="primary"
               slot="toggle"
               waves-fixed
-              >Dropdown</mdb-dropdown-toggle
+              ><mdb-icon far icon="user-circle" /> {{user.name}}</mdb-dropdown-toggle
             >
             <mdb-dropdown-menu style="width:90%">
-              <mdb-dropdown-item>Logout</mdb-dropdown-item>
+              <mdb-dropdown-item @click.native="logout">Logout</mdb-dropdown-item>
             </mdb-dropdown-menu>
           </mdb-dropdown>
       </mdb-navbar-toggler>
@@ -29,6 +29,7 @@ import {
   mdbDropdownMenu,
   mdbDropdownToggle,
   mdbNavbarBrand,
+  mdbIcon,
 } from 'mdbvue';
 
 export default {
@@ -41,10 +42,27 @@ export default {
     mdbDropdownMenu,
     mdbDropdownToggle,
     mdbNavbarBrand,
+    mdbIcon,
+  },
+  data() {
+    return {
+      user: {},
+    };
+  },
+  methods: {
+    logout() {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
+    },
+  },
+  beforeMount() {
+    this.user = sessionStorage.getItem('user') != null
+      ? JSON.parse(sessionStorage.getItem('user'))
+      : JSON.parse(localStorage.getItem('user'));
   },
 };
 </script>
-  <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
   .view {
     background: url("https://mdbootstrap.com/img/Photos/Others/img (42).jpg")
