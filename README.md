@@ -19,6 +19,7 @@ npm run build
 ```
 npm run lint
 ```
+## Ao executar pela primeira será criada a conta admin@nextar.com.br senha: admin
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
