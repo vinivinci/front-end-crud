@@ -84,7 +84,7 @@ export default {
   methods: {
     loginSubmit() {
       axios
-        .post('http://localhost:8080/auth/authenticate', {
+        .post(`${process.env.VUE_APP_URL}/auth/authenticate`, {
           email: this.email,
           password: this.password,
         })

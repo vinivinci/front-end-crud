@@ -195,7 +195,7 @@ export default {
         this.openModalDelete = false;
       } else {
         axios
-          .delete(`http://localhost:8080/app/delete/${id}`)
+          .delete(`${process.env.VUE_APP_URL}/app/delete/${id}`)
           .then((response) => {
             if (response) {
               this.openModalDelete = false;
@@ -216,7 +216,7 @@ export default {
     },
     create(e) {
       axios
-        .post('http://localhost:8080/app/register', {
+        .post(`${process.env.VUE_APP_URL}/app/register`, {
           name: e.name,
           email: e.email,
           password: e.password,
@@ -236,7 +236,7 @@ export default {
     update(e) {
       const id = this.currentUser._id;
       axios
-        .put(`http://localhost:8080/app/update/${id}`, {
+        .put(`${process.env.VUE_APP_URL}/app/update/${id}`, {
           name: e.name,
           email: e.email,
           password: e.password,
@@ -255,7 +255,7 @@ export default {
     },
     getUsers() {
       axios
-        .get('http://localhost:8080/app/get')
+        .get(`${process.env.VUE_APP_URL}/app/get`)
         .then((response) => {
           if (response.data) {
             this.data = response.data;
@@ -267,7 +267,7 @@ export default {
     },
     getUsersForName() {
       axios
-        .get('http://localhost:8080/app/getForName', {
+        .get(`${process.env.VUE_APP_URL}/app/getForName`, {
           params: {
             name: this.nameSearched,
           },
